@@ -21,7 +21,6 @@
         .user .bubble { background: #eeeeee; border-color: #999999; font-weight: bold; }
         .btn-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .reply-btn { padding: 8px 12px; border: 2px solid var(--red); background: white; color: var(--red); border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .reply-btn:hover { background: var(--red); color: white; }
         .link-btn { display: inline-block; padding: 8px 14px; background: var(--red); color: white; text-decoration: none; border-radius: 18px; font-size: 12px; font-weight: bold; margin-top: 5px; text-align: center; }
         .footer { padding: 10px; background: #f0f0f0; display: flex; gap: 8px; border-top: 1px solid #ccc; flex-shrink: 0; }
         #user-text { flex: 1; height: 45px; border-radius: 22px; border: 1px solid #bbb; padding: 0 15px; font-size: 16px; background: white; }
@@ -57,7 +56,7 @@
     var database = {
         "Bad Herrenalb": {
             "url": "https://www.asb-nsw.de/bad-herrenalb",
-            "Geschäftsstelle": {t: "Willkommen in unserer Zentrale! Melanie Lausegger leitet uns mit viel Herz.", p: "0708392350", m: "m.lausegger@asb-nsw.de"},
+            "Geschäftsstelle": {t: "Willkommen! Melanie Lausegger leitet uns mit viel Herz.", p: "0708392350", m: "m.lausegger@asb-nsw.de"},
             "Ambulante Pflege": {t: "Wir schenken Ihnen Geborgenheit durch Carina Bittmann.", p: "07083923513", m: "c.bittmann@asb-nsw.de"},
             "Fahrdienste": {t: "Mobil bleiben mit Mario Hernandez-Gonzalez.", p: "07083923511", m: "m.hernandez@asb-nsw.de"},
             "Mitgliederbetreuung": {t: "Nicole Häring / Bärbel Luzha beraten Sie herzlich.", p: "07083923514", m: "n.haering@asb-nsw.de"}
@@ -66,8 +65,7 @@
             "url": "https://www.asb-nsw.de/bad-liebenzell",
             "Seniorenzentrum": {t: "Stationäre Pflege am Alten Schulweg: Ein Ort der Gemeinschaft.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"},
             "Fahrdienste": {t: "Sicher unterwegs in Liebenzell.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"},
-            "Mobile Dienste (MSD)": {t: "Hilfe im Alltag durch unsere mobilen Dienste.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"},
-            "Ambulante Pflege": {t: "Fachkundige Pflege direkt bei Ihnen vor Ort.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"}
+            "Mobile Dienste (MSD)": {t: "Hilfe im Alltag durch unsere mobilen Dienste.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"}
         },
         "Dobel": {
             "url": "https://www.asb-nsw.de/dobel",
@@ -100,24 +98,44 @@
 
     function handle(val) {
         if (!val) return;
-        var low = val.toLowerCase();
+        var low = val.toLowerCase().trim();
         if (val !== "🌐 Google Suche") { addMsg('user', val); lastSearch = val; }
 
         setTimeout(function() {
             if (low === "start" || low === "zurück zum start") {
                 curLoc = null;
                 addMsg('bot', "Guten Morgen! 👋 Wie kann ich helfen?", ["Bad Herrenalb", "Bad Liebenzell / Calw", "Dobel", "Freudenstadt", "Stellenangebote 💼", "Social Media"]);
-            } else if (low.indexOf("stellen") > -1 || low.indexOf("job") > -1) {
+                return;
+            }
+            if (low.indexOf("stellen") > -1 || low.indexOf("job") > -1) {
                 addMsg('bot', "<strong>Fragen? Fragen!</strong> 😊 Werden Sie Teil unseres Teams. Wir freuen uns auf Sie!<br><br><div class='btn-wrap'><a href='https://asb-nsw.de/stellenangebote' target='_blank' class='link-btn'>🌐 Jobs</a> <a href='tel:0708392350' class='link-btn'>📞 07083 92350</a> <a href='mailto:bewerbung@asb-nsw.de' class='link-btn'>✉️ E-Mail</a></div>", ["Zurück zum Start"]);
-            } else if (low.indexOf("social") > -1) {
+                return;
+            }
+            if (low.indexOf("social") > -1) {
                 addMsg('bot', "Besuchen Sie uns online:<br><br><div class='btn-wrap'><a href='https://facebook.com/asbnordschwarzwald' target='_blank' class='link-btn' style='background:#1877F2'>Facebook</a> <a href='https://instagram.com/asb_nordschwarzwald' target='_blank' class='link-btn' style='background:#E4405F'>Instagram</a> <a href='https://linktr.ee/asbnsw' target='_blank' class='link-btn' style='background:#39e09b;color:#000'>Linktree</a></div>", ["Zurück zum Start"]);
-            } else if (database[val]) {
-                curLoc = val;
-                var keys = []; for(var k in database[val]) { if(k !== "url") keys.push(k); }
-                addMsg('bot', "Unsere herzlichen Dienste in <b>" + val + "</b>:", keys.concat(["Zurück zum Start"]));
-            } else if (curLoc && database[curLoc][val]) {
-                var info = database[curLoc][val];
-                addMsg('bot', "📍 <b>"+val+"</b><br><br>"+info.t+"<br><br><div class='btn-wrap'><a href='"+database[curLoc].url+"' target='_blank' class='link-btn'>🌐 Web</a> <a href='tel:"+info.p+"' class='link-btn'>📞 Rufen</a> <a href='mailto:"+info.m+"' class='link-btn'>✉️ Mail</a></div>", ["Zurück zum Start"]);
+                return;
+            }
+
+            var foundLoc = null;
+            for (var loc in database) {
+                if (loc.toLowerCase().indexOf(low) > -1 || low.indexOf(loc.toLowerCase()) > -1) { foundLoc = loc; break; }
+            }
+
+            if (foundLoc) {
+                curLoc = foundLoc;
+                var keys = []; for(var k in database[foundLoc]) { if(k !== "url") keys.push(k); }
+                addMsg('bot', "Unsere herzlichen Dienste in <b>" + foundLoc + "</b>:", keys.concat(["Zurück zum Start"]));
+            } else if (curLoc) {
+                var foundService = null;
+                for (var s in database[curLoc]) {
+                    if (s.toLowerCase().indexOf(low) > -1 || low.indexOf(s.toLowerCase()) > -1 || (low.indexOf("fahr") > -1 && s.toLowerCase().indexOf("fahr") > -1)) { foundService = s; break; }
+                }
+                if (foundService && foundService !== "url") {
+                    var info = database[curLoc][foundService];
+                    addMsg('bot', "📍 <b>"+foundService+"</b><br><br>"+info.t+"<br><br><div class='btn-wrap'><a href='"+database[curLoc].url+"' target='_blank' class='link-btn'>🌐 Web</a> <a href='tel:"+info.p+"' class='link-btn'>📞 Rufen</a> <a href='mailto:"+info.m+"' class='link-btn'>✉️ Mail</a></div>", ["Zurück zum Start"]);
+                } else {
+                    addMsg('bot', "Dazu habe ich keine internen Infos. Google fragen?", ["🌐 Google Suche", "Zurück zum Start"]);
+                }
             } else if (val === "🌐 Google Suche") {
                 window.open("https://www.google.com/search?q=" + encodeURIComponent(lastSearch), "_blank");
             } else {
@@ -126,20 +144,9 @@
         }, 400);
     }
 
-    // Senden per Button-Klick
     btn.onclick = function() { if(field.value) { handle(field.value); field.value = ""; } };
-
-    // NEU: Senden per Return-Taste (Enter)
-    field.addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault(); // Verhindert Zeilenumbruch
-            btn.click();
-        }
-    });
-
+    field.addEventListener("keypress", function(e) { if (e.key === "Enter") { btn.click(); } });
     window.onload = function() { flow.innerHTML = ''; handle("start"); };
 </script>
 </body>
-
 </html>
-
