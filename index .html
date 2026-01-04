@@ -1,152 +1,303 @@
 <!doctype html>
+
 <html lang="de" style="height:100%; width:100%;">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>ASB Nordschwarzwald Chatbot</title>
+
     <style>
+
         :root { --red: #e30613; --yellow: #ffee00; --pale: #fff9c4; --dark: #333333; }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+
         html, body { height: 100%; width: 100%; margin: 0; padding: 0; font-family: sans-serif; background: var(--pale); overflow: hidden; display: flex; flex-direction: column; }
+
         .header { background: var(--yellow); padding: 12px; border-bottom: 4px solid var(--red); flex-shrink: 0; }
+
         .header-link { text-decoration: none; display: flex; align-items: center; gap: 10px; }
+
         .asb-logo { height: 35px; width: auto; }
+
         .header-title { color: var(--red); font-size: 15px; font-weight: bold; margin: 0; }
+
         .nav { background: var(--dark); padding: 8px; display: flex; gap: 5px; flex-wrap: wrap; border-bottom: 2px solid var(--red); flex-shrink: 0; }
+
         .nav a { color: var(--yellow); text-decoration: none; font-weight: bold; font-size: 11px; padding: 3px 6px; }
+
         .nav .nav-job { color: white; background: var(--red); border-radius: 3px; }
+
         #chat-flow { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+
         .msg-container { display: flex; flex-direction: column; align-items: flex-start; animation: fadeIn 0.3s ease; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+
         .bubble { padding: 12px; border-radius: 15px; max-width: 88%; border: 2px solid var(--red); background: #ffffff; font-size: 14px; line-height: 1.4; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
         .user .bubble { background: #eeeeee; border-color: #999999; font-weight: bold; }
+
         .btn-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
         .reply-btn { padding: 8px 12px; border: 2px solid var(--red); background: white; color: var(--red); border-radius: 15px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
         .link-btn { display: inline-block; padding: 8px 14px; background: var(--red); color: white; text-decoration: none; border-radius: 18px; font-size: 12px; font-weight: bold; margin-top: 5px; text-align: center; min-width: 80px; }
+
         .footer { padding: 10px; background: #f0f0f0; display: flex; gap: 8px; border-top: 1px solid #ccc; flex-shrink: 0; }
+
         #user-text { flex: 1; height: 45px; border-radius: 22px; border: 1px solid #bbb; padding: 0 15px; font-size: 16px; background: white; }
+
         #send-trigger { background: var(--red); color: white; border: none; border-radius: 22px; padding: 0 20px; font-weight: bold; cursor: pointer; }
+
     </style>
+
 </head>
+
 <body>
+
 <div class="header">
+
     <a href="https://www.asb-nsw.de/" target="_blank" class="header-link"> 
+
       <img src="https://www.asb-nsw.de/templates/yootheme/cache/16/asb-bw-logo-web180-1664f6c7.webp" alt="Logo" class="asb-logo"> 
+
       <h1 class="header-title">ASB Region Nordschwarzwald 🤖</h1>
+
     </a>
+
 </div>
+
 <div class="nav">
+
     <a href="https://www.asb-nsw.de/bad-herrenalb" target="_blank">🏠 Herrenalb</a>
+
     <a href="https://www.asb-nsw.de/bad-liebenzell" target="_blank">🏠 Liebenzell</a>
+
     <a href="https://www.asb-nsw.de/dobel" target="_blank">🏠 Dobel</a>
+
     <a href="https://www.asb-nsw.de/freudenstadt" target="_blank">🏠 Freudenstadt</a>
+
     <a href="https://www.asb-nsw.de/stellenangebote" target="_blank" class="nav-job">💼 Jobs</a>
+
 </div>
+
 <div id="chat-flow"></div>
+
 <div class="footer">
+
     <input type="text" id="user-text" placeholder="Ihre Frage an uns...">
+
     <button id="send-trigger">Senden</button>
+
 </div>
+
 <script>
+
     var flow = document.getElementById('chat-flow');
+
     var field = document.getElementById('user-text');
+
     var btn = document.getElementById('send-trigger');
+
     var lastSearch = "";
+
     var curLoc = null;
 
+
+
     var database = {
+
         "Bad Herrenalb": {
+
             "url": "https://www.asb-nsw.de/bad-herrenalb",
+
             "Geschäftsstelle": {t: "Willkommen! Melanie Lausegger leitet uns mit viel Herz.", p: "0708392350", m: "m.lausegger@asb-nsw.de"},
+
             "Ambulante Pflege": {t: "Wir schenken Ihnen Geborgenheit durch Carina Bittmann.", p: "07083923513", m: "c.bittmann@asb-nsw.de"},
+
             "Fahrdienste": {t: "Mobil bleiben mit Mario Hernandez-Gonzalez.", p: "07083923511", m: "m.hernandez@asb-nsw.de"},
+
             "Mitgliederbetreuung": {t: "Nicole Häring / Bärbel Luzha beraten Sie herzlich.", p: "07083923514", m: "n.haering@asb-nsw.de"}
+
         },
+
         "Bad Liebenzell / Calw": {
+
             "url": "https://www.asb-nsw.de/bad-liebenzell",
+
             "Seniorenzentrum": {t: "Stationäre Pflege am Alten Schulweg: Ein Ort der Gemeinschaft.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"},
+
             "Fahrdienste": {t: "Sicher unterwegs in Liebenzell.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"},
+
             "Mobile Dienste (MSD)": {t: "Hilfe im Alltag durch unsere mobilen Dienste.", p: "070529348166", m: "t.hornfeldt@asb-nsw.de"}
+
         },
+
         "Dobel": {
+
             "url": "https://www.asb-nsw.de/dobel",
+
             "Tagespflege": {t: "Ein schöner Tag in Gemeinschaft auf dem Dobel. Wir freuen uns!", p: "07081954560", m: "v.kruppa@asb-nsw.de"},
+
             "Pflegeheim": {t: "Geborgenheit auf der Sonneninsel Dobel: Pflege mit Herz.", p: "07081954560", m: "v.kruppa@asb-nsw.de"}
+
         },
+
         "Freudenstadt": {
+
             "url": "https://www.asb-nsw.de/freudenstadt",
+
             "Am Jägerhof": {t: "Ihre Alltagsbegleiter in Freudenstadt: Pflege mit Herz.", p: "07441951342", m: "b.loercher@asb-nsw.de"},
+
             "Essen auf Rädern": {t: "Täglich frisch und gesund direkt an Ihre Haustür.", p: "07441951342", m: "jaegerhof-pflege@asb-nsw.de"}
+
         }
+
     };
 
+
+
     function addMsg(role, text, buttons) {
+
         var container = document.createElement('div');
+
         container.className = "msg-container " + role;
+
         var html = '<div class="bubble">' + text;
+
         if (buttons && buttons.length > 0) {
+
             html += '<div class="btn-wrap">';
+
             for (var i = 0; i < buttons.length; i++) {
+
                 html += '<button class="reply-btn" onclick="handle(\'' + buttons[i] + '\')">' + buttons[i] + '</button>';
+
             }
+
             html += '</div>';
+
         }
+
         html += '</div>';
+
         container.innerHTML = html;
+
         flow.appendChild(container);
+
         flow.scrollTop = flow.scrollHeight;
+
     }
+
+
 
     function handle(val) {
+
         if (!val) return;
+
         var lowVal = val.toLowerCase().trim();
+
         if (val !== "🌐 Google Suche") { addMsg('user', val); lastSearch = val; }
 
+
+
         setTimeout(function() {
+
             if (lowVal === "start" || lowVal === "zurück zum start") {
+
                 curLoc = null;
+
                 addMsg('bot', "Guten Morgen! 👋 Wie kann ich helfen?", ["Bad Herrenalb", "Bad Liebenzell / Calw", "Dobel", "Freudenstadt", "Stellenangebote 💼", "Social Media"]);
+
                 return;
+
             }
+
             if (lowVal.indexOf("stellen") > -1 || lowVal.indexOf("job") > -1) {
+
                 addMsg('bot', "<strong>Fragen? Fragen!</strong> 😊 Werden Sie Teil unseres Teams.<br><br><div class='btn-wrap'><a href='https://asb-nsw.de/stellenangebote' target='_blank' class='link-btn'>🌐 Jobs</a> <a href='tel:0708392350' class='link-btn'>📞 07083 92350</a> <a href='mailto:bewerbung@asb-nsw.de' class='link-btn'>✉️ E-Mail</a></div>", ["Zurück zum Start"]);
+
                 return;
+
             }
+
             if (lowVal.indexOf("social") > -1) {
+
                 addMsg('bot', "Besuchen Sie uns online:<br><br><div class='btn-wrap'><a href='https://facebook.com/asbnordschwarzwald' target='_blank' class='link-btn' style='background:#1877F2'>Facebook</a> <a href='https://instagram.com/asb_nordschwarzwald' target='_blank' class='link-btn' style='background:#E4405F'>Instagram</a> <a href='https://linktr.ee/asbnsw' target='_blank' class='link-btn' style='background:#39e09b;color:#000'>Linktree</a></div>", ["Zurück zum Start"]);
+
                 return;
+
             }
+
+
 
             var foundLoc = null;
+
             for (var loc in database) {
+
                 if (loc.toLowerCase().indexOf(lowVal) > -1 || lowVal.indexOf(loc.toLowerCase()) > -1) { foundLoc = loc; break; }
+
             }
+
+
 
             if (foundLoc) {
+
                 curLoc = foundLoc;
+
                 var keys = []; for(var k in database[foundLoc]) { if(k !== "url") keys.push(k); }
+
                 addMsg('bot', "Dienste in <b>" + foundLoc + "</b>:", keys.concat(["Zurück zum Start"]));
+
             } else if (curLoc) {
+
                 var foundService = null;
+
                 for (var s in database[curLoc]) {
+
                     var sLow = s.toLowerCase();
+
                     if (sLow.indexOf(lowVal) > -1 || lowVal.indexOf(sLow) > -1 || (lowVal.indexOf("fahr") > -1 && sLow.indexOf("fahr") > -1)) { foundService = s; break; }
+
                 }
+
                 if (foundService && foundService !== "url") {
+
                     var info = database[curLoc][foundService];
+
                     addMsg('bot', "📍 <b>"+foundService+"</b><br><br>"+info.t+"<br><br><div class='btn-wrap'><a href='"+database[curLoc].url+"' target='_blank' class='link-btn'>🌐 Web</a> <a href='tel:"+info.p+"' class='link-btn'>📞 Rufen</a> <a href='mailto:"+info.m+"' class='link-btn'>✉️ Mail</a></div>", ["Zurück zum Start"]);
+
                 } else {
+
                     addMsg('bot', "Dazu habe ich keine internen Infos. Google fragen?", ["🌐 Google Suche", "Zurück zum Start"]);
+
                 }
+
             } else {
+
                 addMsg('bot', "Dazu habe ich keine internen Infos. Google fragen?", ["🌐 Google Suche", "Zurück zum Start"]);
+
             }
+
         }, 400);
+
     }
 
+
+
     btn.onclick = function() { if(field.value.trim()) { handle(field.value); field.value = ""; } };
+
     field.addEventListener("keypress", function(e) { if (e.key === "Enter") { btn.click(); } });
+
     window.onload = function() { flow.innerHTML = ''; handle("start"); };
+
 </script>
+
 </body>
+
 </html>
